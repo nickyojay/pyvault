@@ -14,6 +14,7 @@ pytest.importorskip("pytestqt")
 
 from PySide6.QtWidgets import QDialog  # noqa: E402
 
+from pyvault.ui.change_password_dialog import ChangePasswordDialog  # noqa: E402
 from pyvault.ui.entry_dialog import EntryDialog  # noqa: E402
 from pyvault.ui.generator_dialog import GeneratorDialog  # noqa: E402
 from pyvault.ui.main_window import MASK, MainWindow  # noqa: E402
@@ -176,3 +177,40 @@ def test_relock_disabled_when_auto_lock_zero(qtbot, unlocked):
     qtbot.addWidget(win)
     win._restart_lock_timer()
     assert not win._lock_timer.isActive()
+
+
+# --- change password dialog -------------------------------------------
+def test_change_password_dialog_wrong_then_right(qtbot, unlocked):
+    controller, _ = unlocked
+    dlg = ChangePasswordDialog(controller)
+    qtbot.addWidget(dlg)
+
+    dlg._current.setText("wrong-current")
+    dlg._new.setText("new-master-pass-1")
+    dlg._confirm.setText("new-master-pass-1")
+    dlg._on_accept()
+    assert dlg.result() != QDialog.Accepted
+
+    dlg._current.setText(PASSWORD)
+    dlg._on_accept()
+    assert dlg.result() == QDialog.Accepted
+    controller.lock()
+    controller.unlock("new-master-pass-1")  # new password now works
+
+
+def test_change_password_dialog_rejects_mismatch(qtbot, unlocked):
+    controller, _ = unlocked
+    dlg = ChangePasswordDialog(controller)
+    qtbot.addWidget(dlg)
+    dlg._current.setText(PASSWORD)
+    dlg._new.setText("new-master-pass-1")
+    dlg._confirm.setText("different-9")
+    dlg._on_accept()
+    assert dlg.result() != QDialog.Accepted
+
+
+def test_create_dialog_shows_strength(qtbot):
+    dlg = CreateVaultDialog()
+    qtbot.addWidget(dlg)
+    dlg._password.setText("Xy7!Xy7!Xy7!Xy7!")
+    assert "Strong" in dlg._strength.text()

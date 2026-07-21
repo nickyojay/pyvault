@@ -10,7 +10,7 @@ A simple, secure, cross-platform (Windows / macOS / Linux) personal password man
 
 ## Project status
 
-Phase 3 (GUI) complete. See the roadmap below.
+Phase 4 (hardening & UX) complete. See the roadmap below.
 
 | Phase | Goal | Status |
 |-------|------|--------|
@@ -18,7 +18,7 @@ Phase 3 (GUI) complete. See the roadmap below.
 | 1 | Crypto core (KDF, AES-GCM, vault file I/O) + tests | ✅ |
 | 2 | CLI harness (init/add/list/get/rm/gen) + generator | ✅ |
 | 3 | PySide6 GUI (unlock, entry list, editor, generator, settings) | ✅ |
-| 4 | Hardening & UX (change master password, import/export, onboarding) | ⬜ |
+| 4 | Change master password, CSV import/export, sync-conflict safety, strength hint | ✅ |
 | 5 | Packaging (PyInstaller) + security docs | ⬜ |
 
 ## Development setup
@@ -60,6 +60,9 @@ pyvault list                                   # list entries
 pyvault get GitHub --show                       # reveal one entry
 pyvault rm GitHub                              # delete an entry
 pyvault gen -l 24 --no-ambiguous               # just generate a password
+pyvault passwd                                 # change the master password
+pyvault export backup.csv                       # export (PLAINTEXT — handle with care)
+pyvault import from-chrome.csv                  # import from another manager
 ```
 
 ## Layout

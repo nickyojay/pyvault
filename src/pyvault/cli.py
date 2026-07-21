@@ -17,6 +17,7 @@ import sys
 from pathlib import Path
 
 from pyvault import __version__
+from pyvault.core.controller import VaultController
 from pyvault.core.generator import generate_password
 from pyvault.core.model import Entry
 from pyvault.core.vault_file import (
@@ -161,6 +162,43 @@ def cmd_rm(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_passwd(args: argparse.Namespace) -> int:
+    path = _resolve_path(args)
+    if not path.exists():
+        raise VaultError(f"no vault at {path}")
+    controller = VaultController(path)
+    current = _read_password("Current master password: ")
+    controller.unlock(current)
+    new = _read_new_password()
+    print("Deriving key (Argon2id is intentionally slow)...", file=sys.stderr)
+    controller.change_password(current, new)
+    print("Master password changed.")
+    return 0
+
+
+def cmd_export(args: argparse.Namespace) -> int:
+    path = _resolve_path(args)
+    if not path.exists():
+        raise VaultError(f"no vault at {path}")
+    controller = VaultController(path)
+    controller.unlock(_read_password())
+    controller.export_csv(args.file)
+    print(f"Exported to {args.file}")
+    print("WARNING: this CSV contains plaintext passwords. Delete it when done.", file=sys.stderr)
+    return 0
+
+
+def cmd_import(args: argparse.Namespace) -> int:
+    path = _resolve_path(args)
+    if not path.exists():
+        raise VaultError(f"no vault at {path} (run `pyvault init` first)")
+    controller = VaultController(path)
+    controller.unlock(_read_password())
+    count = controller.import_csv(args.file)
+    print(f"Imported {count} entr{'y' if count == 1 else 'ies'} from {args.file}")
+    return 0
+
+
 def cmd_gen(args: argparse.Namespace) -> int:
     print(
         generate_password(
@@ -207,6 +245,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_rm = sub.add_parser("rm", help="delete an entry")
     p_rm.add_argument("name", help="entry id (or unique title substring)")
     p_rm.set_defaults(func=cmd_rm)
+
+    p_passwd = sub.add_parser("passwd", help="change the master password")
+    p_passwd.set_defaults(func=cmd_passwd)
+
+    p_export = sub.add_parser("export", help="export entries to a CSV file (plaintext!)")
+    p_export.add_argument("file", help="destination .csv path")
+    p_export.set_defaults(func=cmd_export)
+
+    p_import = sub.add_parser("import", help="import entries from a CSV file")
+    p_import.add_argument("file", help="source .csv path")
+    p_import.set_defaults(func=cmd_import)
 
     p_gen = sub.add_parser("gen", help="generate a password (no vault needed)")
     p_gen.add_argument("-l", "--length", type=int, default=20)

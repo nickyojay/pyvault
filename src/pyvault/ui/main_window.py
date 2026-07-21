@@ -6,6 +6,7 @@ from PySide6.QtCore import QEvent, QObject, Qt, QTimer
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QFileDialog,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -22,6 +23,8 @@ from PySide6.QtWidgets import (
 from pyvault.core.config import Config
 from pyvault.core.controller import VaultController
 from pyvault.core.model import Entry
+from pyvault.errors import VaultError
+from pyvault.ui.change_password_dialog import ChangePasswordDialog
 from pyvault.ui.entry_dialog import EntryDialog
 from pyvault.ui.settings_dialog import SettingsDialog
 
@@ -47,6 +50,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("PyVault")
         self.resize(760, 480)
         self._build_ui()
+        self._build_menu()
         self._refresh()
 
         self._clip_timer = QTimer(self)
@@ -150,6 +154,19 @@ class MainWindow(QMainWindow):
         w.setLayout(layout)
         return w
 
+    def _build_menu(self) -> None:
+        menu = self.menuBar()
+        file_menu = menu.addMenu("&File")
+        file_menu.addAction("Import from CSV…", self._import_csv)
+        file_menu.addAction("Export to CSV…", self._export_csv)
+        file_menu.addSeparator()
+        file_menu.addAction("Quit", self.close)
+
+        vault_menu = menu.addMenu("&Vault")
+        vault_menu.addAction("Change Master Password…", self._change_password)
+        vault_menu.addAction("Settings…", self._open_settings)
+        vault_menu.addAction("Lock", self._lock_now)
+
     # --- list / selection ---------------------------------------------
     def _refresh(self) -> None:
         selected_id = self._current.id if self._current else None
@@ -200,6 +217,7 @@ class MainWindow(QMainWindow):
             entry = self._controller.add_entry(**dlg.values())
             self._current = entry
             self._refresh()
+            self._notify_conflict()
 
     def _edit(self) -> None:
         if self._current is None:
@@ -209,6 +227,7 @@ class MainWindow(QMainWindow):
             self._controller.update_entry(self._current.id, **dlg.values())
             self._refresh()
             self._show_entry(self._controller.get(self._current.id))
+            self._notify_conflict()
 
     def _delete(self) -> None:
         if self._current is None:
@@ -218,6 +237,54 @@ class MainWindow(QMainWindow):
             self._controller.delete_entry(self._current.id)
             self._current = None
             self._refresh()
+            self._notify_conflict()
+
+    def _import_csv(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(self, "Import CSV", "", "CSV files (*.csv)")
+        if not path:
+            return
+        try:
+            count = self._controller.import_csv(path)
+        except VaultError as exc:
+            QMessageBox.warning(self, "Import failed", str(exc))
+            return
+        self._refresh()
+        self._notify_conflict()
+        QMessageBox.information(self, "Import complete", f"Imported {count} entries.")
+
+    def _export_csv(self) -> None:
+        confirm = QMessageBox.warning(
+            self,
+            "Export plaintext?",
+            "The exported CSV will contain your passwords in plaintext. Continue?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if confirm != QMessageBox.Yes:
+            return
+        path, _ = QFileDialog.getSaveFileName(self, "Export CSV", "", "CSV files (*.csv)")
+        if not path:
+            return
+        self._controller.export_csv(path)
+        QMessageBox.information(self, "Export complete", f"Exported to {path}.")
+
+    def _change_password(self) -> None:
+        dlg = ChangePasswordDialog(self._controller, self)
+        if dlg.exec() == ChangePasswordDialog.Accepted:
+            QMessageBox.information(self, "Done", "Master password changed.")
+
+    def _notify_conflict(self) -> None:
+        """Tell the user if a synced remote copy was preserved during save."""
+        if self._controller.last_conflict_path is None:
+            return
+        preserved = self._controller.last_conflict_path
+        self._controller.last_conflict_path = None
+        QMessageBox.information(
+            self,
+            "Sync conflict preserved",
+            "The vault had changed on disk (likely synced from another device). "
+            f"That version was saved as:\n\n{preserved}\n\n"
+            "Your change was applied. Review the preserved file if you need to merge.",
+        )
 
     def _open_settings(self) -> None:
         dlg = SettingsDialog(self._config, self)

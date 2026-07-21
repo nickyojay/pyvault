@@ -19,3 +19,7 @@ class VaultCorruptError(VaultError):
 
 class VaultVersionError(VaultError):
     """The vault file uses a format version this build does not understand."""
+
+
+class VaultImportError(VaultError):
+    """An import file could not be parsed."""

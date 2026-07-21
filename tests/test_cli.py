@@ -116,3 +116,40 @@ def test_get_missing_entry_errors(vault_env):
 def test_commands_fail_without_vault(vault_env):
     run, _ = vault_env
     assert run("list") == 1  # no vault created yet
+
+
+def test_passwd_changes_master_password(vault_env, monkeypatch, tmp_path):
+    run, path = vault_env
+    run("init")
+    run("add", "GitHub", "-p", "x")
+    monkeypatch.setattr(cli, "_read_new_password", lambda: "new-master-99")
+    assert run("passwd") == 0
+
+    from pyvault.core.controller import VaultController
+    from pyvault.errors import InvalidPasswordError
+
+    controller = VaultController(path)
+    with pytest.raises(InvalidPasswordError):
+        controller.unlock(PASSWORD)  # old password rejected
+    controller.unlock("new-master-99")
+    assert controller.entries()[0].title == "GitHub"
+
+
+def test_export_then_import_into_new_vault(vault_env, tmp_path, capsys):
+    run, _ = vault_env
+    run("init")
+    run("add", "GitHub", "-u", "nick", "-p", "s3cret")
+    csv_path = tmp_path / "dump.csv"
+    assert run("export", str(csv_path)) == 0
+    assert csv_path.exists()
+
+    v2 = tmp_path / "v2.vault"
+    assert cli.main(["--vault", str(v2), "init"]) == 0
+    assert cli.main(["--vault", str(v2), "import", str(csv_path)]) == 0
+
+    from pyvault.core.controller import VaultController
+
+    controller = VaultController(v2)
+    controller.unlock(PASSWORD)
+    assert controller.entries()[0].title == "GitHub"
+    assert controller.entries()[0].password == "s3cret"

@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from pyvault.core.controller import VaultController
+from pyvault.core.strength import password_strength
 from pyvault.errors import InvalidPasswordError, VaultError
 
 MIN_PASSWORD_LEN = 8
@@ -27,13 +28,16 @@ class CreateVaultDialog(QDialog):
 
         self._password = QLineEdit()
         self._password.setEchoMode(QLineEdit.Password)
+        self._password.textChanged.connect(self._update_strength)
         self._confirm = QLineEdit()
         self._confirm.setEchoMode(QLineEdit.Password)
+        self._strength = QLabel("")
         self._error = QLabel()
         self._error.setStyleSheet("color: #b00020;")
 
         form = QFormLayout()
         form.addRow("New master password", self._password)
+        form.addRow("", self._strength)
         form.addRow("Confirm", self._confirm)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -45,6 +49,9 @@ class CreateVaultDialog(QDialog):
         layout.addLayout(form)
         layout.addWidget(self._error)
         layout.addWidget(buttons)
+
+    def _update_strength(self, text: str) -> None:
+        self._strength.setText(f"Strength: {password_strength(text)}" if text else "")
 
     def _on_accept(self) -> None:
         pw = self._password.text()
