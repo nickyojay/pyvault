@@ -10,15 +10,15 @@ A simple, secure, cross-platform (Windows / macOS / Linux) personal password man
 
 ## Project status
 
-Phase 2 (CLI harness) complete. See the roadmap below.
+Phase 3 (GUI) complete. See the roadmap below.
 
 | Phase | Goal | Status |
 |-------|------|--------|
 | 0 | Scaffold: layout, deps, tooling, CI | ✅ |
 | 1 | Crypto core (KDF, AES-GCM, vault file I/O) + tests | ✅ |
 | 2 | CLI harness (init/add/list/get/rm/gen) + generator | ✅ |
-| 3 | PySide6 GUI (unlock, entry list, editor, generator) | ⬜ |
-| 4 | Hardening & UX (auto-lock, clipboard clear, change master password) | ⬜ |
+| 3 | PySide6 GUI (unlock, entry list, editor, generator, settings) | ✅ |
+| 4 | Hardening & UX (change master password, import/export, onboarding) | ⬜ |
 | 5 | Packaging (PyInstaller) + security docs | ⬜ |
 
 ## Development setup
@@ -36,6 +36,18 @@ pytest            # run tests
 ruff check .      # lint
 black .           # format
 ```
+
+## Desktop app (Phase 3)
+
+```bash
+pyvault-gui      # launch the PySide6 desktop app
+```
+
+On first run it prompts you to create a master password; after that it shows the
+unlock screen. The main window has a searchable entry list, an add/edit form, a
+built-in password generator, copy-to-clipboard with auto-clear, a **Lock**
+button, and **Settings** (vault file location + auto-lock timeout). Point the
+vault path at a cloud-synced folder to sync across machines.
 
 ## CLI usage (Phase 2)
 

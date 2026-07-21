@@ -1,5 +1,10 @@
 """Shared test fixtures."""
 
+import os
+
+# Run Qt without a display. Must be set before any Qt import (pytest-qt).
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
 import pytest
 
 from pyvault.crypto.kdf import KdfParams
