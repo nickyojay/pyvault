@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QMessageBox,
     QPlainTextEdit,
@@ -16,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from pyvault.core.model import Entry
+from pyvault.core.strength import password_strength
 from pyvault.ui.generator_dialog import GeneratorDialog
 
 
@@ -31,6 +33,8 @@ class EntryDialog(QDialog):
         self._username = QLineEdit()
         self._password = QLineEdit()
         self._password.setEchoMode(QLineEdit.Password)
+        self._password.textChanged.connect(self._update_strength)
+        self._strength = QLabel("")
         self._url = QLineEdit()
         self._notes = QPlainTextEdit()
 
@@ -51,6 +55,7 @@ class EntryDialog(QDialog):
         form.addRow("Title *", self._title)
         form.addRow("Username", self._username)
         form.addRow("Password", password_row)
+        form.addRow("", self._strength)
         form.addRow("URL", self._url)
         form.addRow("Notes", self._notes)
 
@@ -68,6 +73,9 @@ class EntryDialog(QDialog):
             self._password.setText(entry.password)
             self._url.setText(entry.url)
             self._notes.setPlainText(entry.notes)
+
+    def _update_strength(self, text: str) -> None:
+        self._strength.setText(f"Strength: {password_strength(text)}" if text else "")
 
     def _generate(self) -> None:
         dlg = GeneratorDialog(self)

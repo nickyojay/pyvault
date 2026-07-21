@@ -79,6 +79,16 @@ def test_entry_dialog_requires_title(qtbot):
     assert dlg.result() != QDialog.Accepted
 
 
+def test_entry_dialog_shows_password_strength(qtbot):
+    dlg = EntryDialog()
+    qtbot.addWidget(dlg)
+    assert dlg._strength.text() == ""  # empty until typed
+    dlg._password.setText("Xy7!Xy7!Xy7!Xy7!")
+    assert "Strong" in dlg._strength.text()
+    dlg._password.setText("weak")
+    assert "Weak" in dlg._strength.text()
+
+
 # --- unlock / create dialogs ------------------------------------------
 def test_create_dialog_rejects_short_password(qtbot):
     dlg = CreateVaultDialog()
