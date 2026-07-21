@@ -24,8 +24,13 @@ All planned phases complete. See the roadmap below.
 
 ## Install
 
-**Standalone app (no Python required):** download the binary for your OS from a
-release (built by CI), or build it yourself — see [`docs/build.md`](docs/build.md).
+**Windows (installer):** download **PyVault-Setup.exe** from a release, run it,
+and follow the wizard (installs per-user, adds a Start Menu shortcut, and
+registers an uninstaller). It's unsigned, so SmartScreen needs a one-time
+**More info → Run anyway**.
+
+**Standalone app (no Python required):** download the raw binary for your OS from
+a release (built by CI), or build it yourself — see [`docs/build.md`](docs/build.md).
 The apps are unsigned, so the first launch needs a one-time OS bypass (documented
 there). Linux also needs `libxcb-cursor0` installed.
 

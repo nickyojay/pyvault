@@ -39,9 +39,25 @@ jobs:
       - name: Build with PyInstaller
         run: pyinstaller pyvault.spec --clean --noconfirm
 
-      - name: Upload artifact
+      - name: Upload raw binary
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.path }}
+          if-no-files-found: error
+
+      # --- Windows installer (Inno Setup) ---
+      - name: Build Windows installer
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging\pyvault.iss
+
+      - name: Upload Windows installer
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: PyVault-Windows-Installer
+          path: packaging/dist_installer/PyVault-Setup.exe
           if-no-files-found: error

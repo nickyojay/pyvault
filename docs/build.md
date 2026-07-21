@@ -31,6 +31,26 @@ Output in `dist/`:
 CI builds all three automatically — see
 [`.github/workflows/release.yml`](../.github/workflows/release.yml).
 
+## Windows installer
+
+For distribution on Windows, the raw `PyVault.exe` is wrapped in a proper
+installer wizard with [Inno Setup](https://jrsoftware.org/isinfo.php) using
+[`packaging/pyvault.iss`](../packaging/pyvault.iss). The installer:
+
+- installs per-user (no administrator rights required),
+- adds Start Menu (and optional desktop) shortcuts,
+- registers a standard uninstaller.
+
+Build it on Windows after the PyInstaller step:
+
+```bat
+pyinstaller pyvault.spec --clean --noconfirm
+iscc packaging\pyvault.iss
+```
+
+Output: `packaging\dist_installer\PyVault-Setup.exe`. CI produces this
+automatically and uploads it as the **PyVault-Windows-Installer** artifact.
+
 ### Linux runtime note
 
 The Qt `xcb` platform plugin needs a few system libraries at run time. On
