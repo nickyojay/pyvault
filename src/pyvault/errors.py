@@ -23,3 +23,7 @@ class VaultVersionError(VaultError):
 
 class VaultImportError(VaultError):
     """An import file could not be parsed."""
+
+
+class BreachCheckError(VaultError):
+    """The online breach-check service could not be reached."""

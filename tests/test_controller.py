@@ -154,3 +154,31 @@ def test_no_conflict_on_normal_saves(controller):
     controller.add_entry(title="First", password="x")
     controller.add_entry(title="Second", password="y")
     assert controller.last_conflict_path is None
+
+
+# --- security audit ----------------------------------------------------
+def test_audit_flags_weak_and_reused(controller):
+    controller.create(PASSWORD)
+    controller.add_entry(title="A", password="weak")
+    controller.add_entry(title="B", password="shared-pass-12")
+    controller.add_entry(title="C", password="shared-pass-12")
+    rows = {r.entry.title: r for r in controller.audit()}
+    assert rows["A"].weak
+    assert rows["B"].reused and rows["C"].reused
+
+
+def test_check_all_breaches_dedupes_requests(controller):
+    controller.create(PASSWORD)
+    controller.add_entry(title="A", password="dupe")
+    controller.add_entry(title="B", password="dupe")  # same password
+    controller.add_entry(title="C", password="unique")
+
+    calls = []
+
+    def fake_fetch(prefix):
+        calls.append(prefix)
+        return "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF:0\n"
+
+    counts = controller.check_all_breaches(fetch=fake_fetch)
+    assert len(counts) == 3  # all three entries reported
+    assert len(calls) == 2  # but only two distinct passwords fetched

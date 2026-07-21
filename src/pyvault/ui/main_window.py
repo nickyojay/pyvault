@@ -24,6 +24,7 @@ from pyvault.core.config import Config
 from pyvault.core.controller import VaultController
 from pyvault.core.model import Entry
 from pyvault.errors import VaultError
+from pyvault.ui.audit_dialog import AuditDialog
 from pyvault.ui.change_password_dialog import ChangePasswordDialog
 from pyvault.ui.entry_dialog import EntryDialog
 from pyvault.ui.settings_dialog import SettingsDialog
@@ -163,6 +164,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction("Quit", self.close)
 
         vault_menu = menu.addMenu("&Vault")
+        vault_menu.addAction("Security Audit…", self._security_audit)
         vault_menu.addAction("Change Master Password…", self._change_password)
         vault_menu.addAction("Settings…", self._open_settings)
         vault_menu.addAction("Lock", self._lock_now)
@@ -271,6 +273,9 @@ class MainWindow(QMainWindow):
         dlg = ChangePasswordDialog(self._controller, self)
         if dlg.exec() == ChangePasswordDialog.Accepted:
             QMessageBox.information(self, "Done", "Master password changed.")
+
+    def _security_audit(self) -> None:
+        AuditDialog(self._controller, self).exec()
 
     def _notify_conflict(self) -> None:
         """Tell the user if a synced remote copy was preserved during save."""

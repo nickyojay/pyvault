@@ -135,6 +135,19 @@ def test_passwd_changes_master_password(vault_env, monkeypatch, tmp_path):
     assert controller.entries()[0].title == "GitHub"
 
 
+def test_audit_offline_reports_weak_and_reused(vault_env, capsys):
+    run, _ = vault_env
+    run("init")
+    run("add", "A", "-p", "weak")
+    run("add", "B", "-p", "shared-pass-12")
+    run("add", "C", "-p", "shared-pass-12")
+    capsys.readouterr()
+    assert run("audit") == 0
+    out = capsys.readouterr().out
+    assert "WEAK" in out
+    assert "REUSED" in out
+
+
 def test_export_then_import_into_new_vault(vault_env, tmp_path, capsys):
     run, _ = vault_env
     run("init")

@@ -19,6 +19,7 @@ Phase 4 (hardening & UX) complete. See the roadmap below.
 | 2 | CLI harness (init/add/list/get/rm/gen) + generator | ✅ |
 | 3 | PySide6 GUI (unlock, entry list, editor, generator, settings) | ✅ |
 | 4 | Change master password, CSV import/export, sync-conflict safety, strength hint | ✅ |
+| 4.5 | Security audit: weak/reused (offline) + HIBP breach check (k-anonymity) | ✅ |
 | 5 | Packaging (PyInstaller) + security docs | ⬜ |
 
 ## Development setup
@@ -63,7 +64,17 @@ pyvault gen -l 24 --no-ambiguous               # just generate a password
 pyvault passwd                                 # change the master password
 pyvault export backup.csv                       # export (PLAINTEXT — handle with care)
 pyvault import from-chrome.csv                  # import from another manager
+pyvault audit                                  # find weak/reused passwords (offline)
+pyvault audit --online                          # also check Have I Been Pwned (k-anonymity)
 ```
+
+### Breach checking & privacy
+
+`audit --online` (and the GUI's **Vault → Security Audit**) checks passwords
+against [Have I Been Pwned](https://haveibeenpwned.com/Passwords) using
+**k-anonymity**: only the first 5 characters of each password's SHA-1 hash are
+sent, so your passwords never leave your machine. Offline weak/reused detection
+sends nothing at all.
 
 ## Layout
 

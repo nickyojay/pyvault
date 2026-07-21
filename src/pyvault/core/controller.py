@@ -9,9 +9,12 @@ from __future__ import annotations
 
 import os
 import shutil
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
+from pyvault.core import breach
+from pyvault.core.audit import AuditRow, offline_rows
 from pyvault.core.model import Entry, Vault
 from pyvault.core.portability import export_csv, import_csv
 from pyvault.core.vault_file import (
@@ -142,6 +145,36 @@ class VaultController:
         if imported:
             self._save()
         return len(imported)
+
+    # --- security audit -----------------------------------------------
+    def audit(self) -> list[AuditRow]:
+        """Offline audit: flag weak and reused passwords. No network."""
+        return offline_rows(self._vault.entries)
+
+    def check_all_breaches(
+        self,
+        *,
+        fetch: breach.Fetcher | None = None,
+        progress: Callable[[int, int], None] | None = None,
+    ) -> dict[str, int]:
+        """Look up every entry's password against HIBP (k-anonymity).
+
+        Returns a map of entry id -> breach count. Passwords are de-duplicated
+        so each distinct password costs at most one request. ``fetch`` is
+        injectable for tests; ``progress(done, total)`` is called as it goes.
+        """
+        entries = self._vault.entries
+        seen: dict[str, int] = {}
+        result: dict[str, int] = {}
+        total = len(entries)
+        for index, entry in enumerate(entries, start=1):
+            if entry.password:
+                if entry.password not in seen:
+                    seen[entry.password] = breach.pwned_count(entry.password, fetch=fetch)
+                result[entry.id] = seen[entry.password]
+            if progress is not None:
+                progress(index, total)
+        return result
 
     # --- persistence + sync-conflict handling -------------------------
     def _disk_mtime(self) -> int | None:

@@ -35,6 +35,23 @@
 - Auto-lock (zeroize the in-memory key) after an inactivity timeout.
 - Clipboard auto-clear a short time after copying a secret.
 
+## Breach checking (Have I Been Pwned)
+
+The optional online audit checks passwords against the HIBP Pwned Passwords
+dataset using **k-anonymity**:
+
+- The password is SHA-1 hashed **locally**; only the first 5 hex characters of
+  that hash are sent to the API. Hundreds of thousands of passwords share any
+  given prefix, so the service cannot determine which password was checked, or
+  for which entry.
+- The `Add-Padding` header randomizes the response size to defeat traffic
+  analysis.
+- SHA-1 is used only because it is the HIBP dataset's index; it protects nothing.
+- It is strictly **opt-in** (a button / `--online` flag), never automatic, and
+  makes an outbound HTTPS request to a third party only when invoked.
+
+Offline audit checks (weak, reused) send nothing over the network.
+
 ## Explicit non-goals (v1)
 
 - Defending against a **compromised host**: keyloggers, malware, or memory

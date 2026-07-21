@@ -14,6 +14,7 @@ pytest.importorskip("pytestqt")
 
 from PySide6.QtWidgets import QDialog  # noqa: E402
 
+from pyvault.ui.audit_dialog import AuditDialog  # noqa: E402
 from pyvault.ui.change_password_dialog import ChangePasswordDialog  # noqa: E402
 from pyvault.ui.entry_dialog import EntryDialog  # noqa: E402
 from pyvault.ui.generator_dialog import GeneratorDialog  # noqa: E402
@@ -224,3 +225,37 @@ def test_create_dialog_shows_strength(qtbot):
     qtbot.addWidget(dlg)
     dlg._password.setText("Xy7!Xy7!Xy7!Xy7!")
     assert "Strong" in dlg._strength.text()
+
+
+# --- security audit dialog --------------------------------------------
+def test_audit_dialog_shows_offline_flags(qtbot, tmp_path):
+    controller = VaultController(tmp_path / "vault.vault", kdf_params=KdfParams.create(**FAST))
+    controller.create(PASSWORD)
+    controller.add_entry(title="Weak", password="weak")
+    controller.add_entry(title="Strong", password="Xy7!Xy7!Xy7!Xy7!")
+
+    dlg = AuditDialog(controller)
+    qtbot.addWidget(dlg)
+    # Column 1 is "Weak"; the weak entry should be flagged, the strong one not.
+    titles = {dlg._table.item(r, 0).text(): r for r in range(dlg._table.rowCount())}
+    assert "yes" in dlg._table.item(titles["Weak"], 1).text()
+    assert dlg._table.item(titles["Strong"], 1).text() == "—"
+
+
+def test_audit_dialog_online_breach_check(qtbot, tmp_path):
+    import hashlib
+
+    controller = VaultController(tmp_path / "vault.vault", kdf_params=KdfParams.create(**FAST))
+    controller.create(PASSWORD)
+    controller.add_entry(title="Site", password="password123")
+
+    suffix = hashlib.sha1(b"password123", usedforsecurity=False).hexdigest().upper()[5:]
+
+    def fake_fetch(_prefix):
+        return f"{suffix}:5000\n"
+
+    dlg = AuditDialog(controller, breach_fetch=fake_fetch)
+    qtbot.addWidget(dlg)
+    row = next(r for r in range(dlg._table.rowCount()) if dlg._table.item(r, 0).text() == "Site")
+    dlg._start_breach_check()
+    qtbot.waitUntil(lambda: "5,000" in dlg._table.item(row, 3).text(), timeout=3000)

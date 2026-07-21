@@ -199,6 +199,41 @@ def cmd_import(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_audit(args: argparse.Namespace) -> int:
+    path = _resolve_path(args)
+    if not path.exists():
+        raise VaultError(f"no vault at {path}")
+    controller = VaultController(path)
+    controller.unlock(_read_password())
+    rows = controller.audit()
+
+    breaches: dict[str, int] = {}
+    if args.online:
+        print(
+            "Checking Have I Been Pwned (only a 5-char hash prefix is sent)...",
+            file=sys.stderr,
+        )
+        breaches = controller.check_all_breaches()
+
+    issues = 0
+    for row in rows:
+        flags = []
+        if row.weak:
+            flags.append("WEAK")
+        if row.reused:
+            flags.append("REUSED")
+        count = breaches.get(row.entry.id, 0)
+        if count:
+            flags.append(f"BREACHED x{count}")
+        if flags:
+            issues += 1
+            print(f"{row.entry.title}: {', '.join(flags)}")
+
+    scope = "issues" if args.online else "offline issues"
+    print(f"\n{issues} {scope} found." if issues else f"No {scope} found.")
+    return 0
+
+
 def cmd_gen(args: argparse.Namespace) -> int:
     print(
         generate_password(
@@ -248,6 +283,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_passwd = sub.add_parser("passwd", help="change the master password")
     p_passwd.set_defaults(func=cmd_passwd)
+
+    p_audit = sub.add_parser("audit", help="find weak/reused (and optionally breached) passwords")
+    p_audit.add_argument(
+        "--online",
+        action="store_true",
+        help="also check Have I Been Pwned (sends only hash prefixes)",
+    )
+    p_audit.set_defaults(func=cmd_audit)
 
     p_export = sub.add_parser("export", help="export entries to a CSV file (plaintext!)")
     p_export.add_argument("file", help="destination .csv path")
