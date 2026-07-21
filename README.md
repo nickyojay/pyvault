@@ -10,7 +10,7 @@ A simple, secure, cross-platform (Windows / macOS / Linux) personal password man
 
 ## Project status
 
-Phase 4 (hardening & UX) complete. See the roadmap below.
+All planned phases complete. See the roadmap below.
 
 | Phase | Goal | Status |
 |-------|------|--------|
@@ -20,7 +20,17 @@ Phase 4 (hardening & UX) complete. See the roadmap below.
 | 3 | PySide6 GUI (unlock, entry list, editor, generator, settings) | ✅ |
 | 4 | Change master password, CSV import/export, sync-conflict safety, strength hint | ✅ |
 | 4.5 | Security audit: weak/reused (offline) + HIBP breach check (k-anonymity) | ✅ |
-| 5 | Packaging (PyInstaller) + security docs | ⬜ |
+| 5 | Packaging (PyInstaller, single-file per OS) + release CI + security docs | ✅ |
+
+## Install
+
+**Standalone app (no Python required):** download the binary for your OS from a
+release (built by CI), or build it yourself — see [`docs/build.md`](docs/build.md).
+The apps are unsigned, so the first launch needs a one-time OS bypass (documented
+there). Linux also needs `libxcb-cursor0` installed.
+
+**From source:** follow Development setup below, then run `pyvault-gui` (desktop)
+or `pyvault` (CLI).
 
 ## Development setup
 
