@@ -10,13 +10,13 @@ A simple, secure, cross-platform (Windows / macOS / Linux) personal password man
 
 ## Project status
 
-Phase 0 (scaffold) complete. See the roadmap below.
+Phase 2 (CLI harness) complete. See the roadmap below.
 
 | Phase | Goal | Status |
 |-------|------|--------|
 | 0 | Scaffold: layout, deps, tooling, CI | ✅ |
-| 1 | Crypto core (KDF, AES-GCM, vault file I/O) + tests | ⬜ |
-| 2 | Temporary CLI harness to exercise the core | ⬜ |
+| 1 | Crypto core (KDF, AES-GCM, vault file I/O) + tests | ✅ |
+| 2 | CLI harness (init/add/list/get/rm/gen) + generator | ✅ |
 | 3 | PySide6 GUI (unlock, entry list, editor, generator) | ⬜ |
 | 4 | Hardening & UX (auto-lock, clipboard clear, change master password) | ⬜ |
 | 5 | Packaging (PyInstaller) + security docs | ⬜ |
@@ -35,6 +35,19 @@ pip install -e ".[dev]"
 pytest            # run tests
 ruff check .      # lint
 black .           # format
+```
+
+## CLI usage (Phase 2)
+
+The vault path resolves as `--vault PATH` > `$PYVAULT_VAULT` > `~/.pyvault/vault.vault`.
+
+```bash
+pyvault init                                   # create a new encrypted vault
+pyvault add GitHub -u nick --url https://gh.com -g   # add, generating a password
+pyvault list                                   # list entries
+pyvault get GitHub --show                       # reveal one entry
+pyvault rm GitHub                              # delete an entry
+pyvault gen -l 24 --no-ambiguous               # just generate a password
 ```
 
 ## Layout
